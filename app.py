@@ -14,6 +14,7 @@ from calendar import monthrange
 
 import streamlit as st
 import pdfplumber
+import pykakasi
 
 # ==================== ページ設定 ====================
 st.set_page_config(
@@ -316,6 +317,14 @@ def transfer_date_text(schedule, billing_month):
     return f'{m}月{d}日'
 
 
+# 漢字氏名 → ひらがな読み変換（五十音ソート用）
+_kks = pykakasi.kakasi()
+
+def name_to_yomi(name):
+    normalized = normalize_name(name)  # 髙→高 等の異体字を正規化してから変換
+    return ''.join(item['hira'] for item in _kks.convert(normalized))
+
+
 # 2026年の口座振替スケジュール（組み込み済み）
 # 請求月 → (振替月, 振替日)
 SCHEDULE_2026 = {
@@ -463,6 +472,7 @@ def build_csv(pdf_data, payment_data, billing_label,
 
     # ── まとめて：1枚の請求書にまとめる ──────────────────────────
     if matome_patients:
+        matome_patients.sort(key=lambda x: name_to_yomi(x[0]))  # 五十音順
         total_all = sum(t for _, _, t in matome_patients)
 
         r = empty_row()
