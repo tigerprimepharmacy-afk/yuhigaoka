@@ -520,21 +520,25 @@ with st.sidebar:
     )
     st.divider()
 
+    default_url      = st.secrets.get('SHEETS_URL', '')
+    default_gid      = st.secrets.get('SHEET_GID', '')
+    default_furikomi = st.secrets.get('FURIKOMI_INFO', '')
+
     sheets_url = st.text_input(
         '会計シート URL',
-        value='',
+        value=default_url,
         help='「会計」シートを開いた状態の URL を貼り付けてください（URLの末尾に #gid=XXXXX が付きます）',
     )
     sheet_gid = st.text_input(
         '会計シート GID（省略可）',
-        value='',
+        value=default_gid,
         help='URLに #gid=XXXXX が含まれない場合はここに数字を入力。省略時は最初のシートを使用。',
     )
     st.divider()
 
     furikomi_info = st.text_area(
         '振込先情報',
-        value='',
+        value=default_furikomi,
         help='個人払い患者の請求書に記載する振込先（銀行名・支店・口座番号など）',
         height=80,
     )
