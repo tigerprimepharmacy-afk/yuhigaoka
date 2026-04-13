@@ -401,9 +401,8 @@ def build_csv(pdf_data, payment_data, billing_label,
     # pdf_data の正規化キーを作成（検索高速化）
     pdf_by_norm = {normalize_name(k): v for k, v in pdf_data.items()}
 
-    # payment_data の患者を順番に処理（氏名の五十音順）
-    for norm_key, pay_info in sorted(payment_data.items(),
-                                     key=lambda x: x[1]['name']):
+    # payment_data の患者を順番に処理（スプレッドシートの並び順＝五十音順）
+    for norm_key, pay_info in payment_data.items():
         display_name = pay_info['name']
         payment      = pay_info['payment']
 
@@ -464,7 +463,6 @@ def build_csv(pdf_data, payment_data, billing_label,
 
     # ── まとめて：1枚の請求書にまとめる ──────────────────────────
     if matome_patients:
-        matome_patients.sort(key=lambda x: x[0])  # 五十音順（名前の文字コード順）
         total_all = sum(t for _, _, t in matome_patients)
 
         r = empty_row()
