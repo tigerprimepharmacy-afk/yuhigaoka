@@ -421,7 +421,7 @@ def build_csv(pdf_data, payment_data, billing_label,
         r[12] = str(total)
         r[13] = '様'
         r[22] = biko
-        r[23] = '' if is_icc else furikomi_info
+        r[23] = ' ' if is_icc else furikomi_info
         rows_out.append(r)
 
         # 品目行
@@ -460,7 +460,7 @@ def build_csv(pdf_data, payment_data, billing_label,
         r[11] = '0'
         r[12] = str(total_all)
         r[13] = '御中'
-        r[23] = furikomi_info
+        r[23] = ' '
         rows_out.append(r)
 
         for (pname, days, total) in matome_patients:
