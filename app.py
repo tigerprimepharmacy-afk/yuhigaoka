@@ -316,6 +316,24 @@ def transfer_date_text(schedule, billing_month):
     return f'{m}月{d}日'
 
 
+# 2026年の口座振替スケジュール（組み込み済み）
+# 請求月 → (振替月, 振替日)
+SCHEDULE_2026 = {
+    1:  (2, 24),   # 1月分  → 2月24日
+    2:  (3, 23),   # 2月分  → 3月23日
+    3:  (4, 22),   # 3月分  → 4月22日
+    4:  (5, 22),   # 4月分  → 5月22日
+    5:  (6, 22),   # 5月分  → 6月22日
+    6:  (7, 22),   # 6月分  → 7月22日
+    7:  (8, 24),   # 7月分  → 8月24日
+    8:  (9, 24),   # 8月分  → 9月24日
+    9:  (10, 22),  # 9月分  → 10月22日
+    10: (11, 24),  # 10月分 → 11月24日
+    11: (12, 22),  # 11月分 → 12月22日
+    12: (1, 22),   # 12月分 → 翌年1月22日
+}
+
+
 # ==================== CSV 生成 ====================
 
 HEADER_COLS = [
@@ -406,7 +424,7 @@ def build_csv(pdf_data, payment_data, billing_label,
 
         # 個人 / ICC: 個別請求書
         is_icc = (payment == 'ICC')
-        biko   = f'{transfer_text}に口座振替' if (is_icc and transfer_text) else ''
+        biko   = f'{transfer_text}口座振替' if (is_icc and transfer_text) else ''
 
         r = empty_row()
         r[0]  = '40101'
@@ -446,6 +464,7 @@ def build_csv(pdf_data, payment_data, billing_label,
 
     # ── まとめて：1枚の請求書にまとめる ──────────────────────────
     if matome_patients:
+        matome_patients.sort(key=lambda x: x[0])  # 五十音順（名前の文字コード順）
         total_all = sum(t for _, _, t in matome_patients)
 
         r = empty_row()
@@ -530,32 +549,57 @@ with col1:
     med_file = st.file_uploader('患者別月間負担額一覧PDFをアップロード', type='pdf', key='med')
 
 with col2:
-    st.subheader('② 口座振替スケジュール PDF（任意）')
+    st.subheader('② 口座振替スケジュール PDF（ICC患者用）')
 
     DATA_DIR       = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
     SAVED_SCHEDULE = os.path.join(DATA_DIR, '口座振替スケジュール.pdf')
 
-    if os.path.exists(SAVED_SCHEDULE):
-        mtime = date.fromtimestamp(os.path.getmtime(SAVED_SCHEDULE))
-        st.success(f'保存済みスケジュールを使用します（更新日: {mtime}）')
+    if billing_year == 2026:
+        st.success('✅ 2026年スケジュール組み込み済み（アップロード不要）')
         schedule_file = None
-        _use_saved = True
-    else:
-        st.info('ICC（口座振替）患者がいる場合はアップロードしてください。')
-        schedule_file = st.file_uploader('年間スケジュールPDFをアップロード', type='pdf', key='sch')
-        _use_saved = False
 
-    new_schedule = st.file_uploader(
-        '📂 スケジュールを更新する',
-        type='pdf', key='sch_update',
-        help='新しいスケジュールPDFをアップロードすると data/ に上書き保存されます',
-    )
-    if new_schedule:
-        os.makedirs(DATA_DIR, exist_ok=True)
-        with open(SAVED_SCHEDULE, 'wb') as f:
-            f.write(new_schedule.read())
-        st.success('✅ スケジュールを更新しました！')
-        st.rerun()
+    elif billing_year >= 2027:
+        st.warning(f'⚠️ {billing_year}年のスケジュールPDFをアップロードしてください。')
+        if os.path.exists(SAVED_SCHEDULE):
+            mtime = date.fromtimestamp(os.path.getmtime(SAVED_SCHEDULE))
+            st.info(f'保存済みスケジュールを使用します（更新日: {mtime}）')
+            schedule_file = None
+    
+        else:
+            schedule_file = st.file_uploader('年間スケジュールPDFをアップロード', type='pdf', key='sch')
+    
+        new_schedule = st.file_uploader(
+            '📂 スケジュールを更新する',
+            type='pdf', key='sch_update',
+            help='新しいスケジュールPDFをアップロードすると data/ に上書き保存されます',
+        )
+        if new_schedule:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            with open(SAVED_SCHEDULE, 'wb') as f:
+                f.write(new_schedule.read())
+            st.success('✅ スケジュールを更新しました！')
+            st.rerun()
+    else:
+        if os.path.exists(SAVED_SCHEDULE):
+            mtime = date.fromtimestamp(os.path.getmtime(SAVED_SCHEDULE))
+            st.success(f'保存済みスケジュールを使用します（更新日: {mtime}）')
+            schedule_file = None
+    
+        else:
+            st.info('ICC（口座振替）患者がいる場合はアップロードしてください。')
+            schedule_file = st.file_uploader('年間スケジュールPDFをアップロード', type='pdf', key='sch')
+    
+        new_schedule = st.file_uploader(
+            '📂 スケジュールを更新する',
+            type='pdf', key='sch_update',
+            help='新しいスケジュールPDFをアップロードすると data/ に上書き保存されます',
+        )
+        if new_schedule:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            with open(SAVED_SCHEDULE, 'wb') as f:
+                f.write(new_schedule.read())
+            st.success('✅ スケジュールを更新しました！')
+            st.rerun()
 
 st.divider()
 
@@ -573,20 +617,25 @@ if st.button('🚀 CSV を生成する', type='primary', use_container_width=Tru
                 st.error(f'PDF の読み込みエラー: {e}')
                 st.stop()
 
-            # ── スケジュール PDF ──────────────────────────────────
+            # ── スケジュール取得 ──────────────────────────────────
             transfer_text = None
-            sch_source = SAVED_SCHEDULE if os.path.exists(SAVED_SCHEDULE) else None
-            if schedule_file and not os.path.exists(SAVED_SCHEDULE):
-                sch_source = schedule_file
-            if sch_source:
-                try:
-                    sch_bytes = (open(sch_source, 'rb').read()
-                                 if isinstance(sch_source, str)
-                                 else sch_source.read())
-                    schedule    = parse_transfer_schedule(sch_bytes)
-                    transfer_text = transfer_date_text(schedule, billing_month_num)
-                except Exception as e:
-                    st.warning(f'スケジュールPDF の読み込みに失敗しました: {e}')
+            if billing_year == 2026:
+                transfer_text = transfer_date_text(SCHEDULE_2026, billing_month_num)
+            else:
+                sch_source = SAVED_SCHEDULE if os.path.exists(SAVED_SCHEDULE) else None
+                if schedule_file:
+                    sch_source = schedule_file
+                if sch_source:
+                    try:
+                        sch_bytes = (open(sch_source, 'rb').read()
+                                     if isinstance(sch_source, str)
+                                     else sch_source.read())
+                        schedule      = parse_transfer_schedule(sch_bytes)
+                        transfer_text = transfer_date_text(schedule, billing_month_num)
+                    except Exception as e:
+                        st.warning(f'スケジュールPDF の読み込みに失敗しました: {e}')
+                elif billing_year >= 2027:
+                    st.warning(f'⚠️ {billing_year}年のスケジュールPDFがないため、ICC患者の備考欄に振替日が記載されません。')
 
             # ── 会計シート取得 ───────────────────────────────────
             try:
