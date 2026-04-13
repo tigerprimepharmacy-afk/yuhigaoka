@@ -479,6 +479,7 @@ def build_csv(pdf_data, payment_data, billing_label,
         r[11] = '0'
         r[12] = str(total_all)
         r[13] = '御中'
+        r[22] = ' '
         r[23] = ' '
         rows_out.append(r)
 
