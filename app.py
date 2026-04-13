@@ -487,12 +487,12 @@ with st.sidebar:
 
     sheets_url = st.text_input(
         '会計シート URL',
-        value='https://docs.google.com/spreadsheets/d/12g6ftPABP4UsbpZUu_Kkh3U0ZRDWH6NDcj6I5FUmjhM/edit',
+        value='',
         help='「会計」シートを開いた状態の URL を貼り付けてください（URLの末尾に #gid=XXXXX が付きます）',
     )
     sheet_gid = st.text_input(
         '会計シート GID（省略可）',
-        value='1950446099',
+        value='',
         help='URLに #gid=XXXXX が含まれない場合はここに数字を入力。省略時は最初のシートを使用。',
     )
     st.divider()
