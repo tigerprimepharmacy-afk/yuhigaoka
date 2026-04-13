@@ -36,9 +36,6 @@ with st.expander('📖 使い方'):
 | 請求対象年月 | 請求する年・月を入力 |
 | 請求日 | 請求書に記載する日付 |
 | お支払期限 | 支払い期限の日付 |
-| 会計シート URL | スプレッドシートの「会計」シートを開いた状態のURLを貼り付け |
-| 会計シート GID | 通常は `1950446099`（変更がなければそのまま） |
-| 振込先情報 | 個人払い患者の請求書に記載する口座情報 |
 
 **Step 2｜PDFをアップロードする**
 - ① 調剤報酬PDF：「患者別月間負担額一覧」のPDF
@@ -520,28 +517,9 @@ with st.sidebar:
     )
     st.divider()
 
-    default_url      = st.secrets.get('SHEETS_URL', '')
-    default_gid      = st.secrets.get('SHEET_GID', '')
-    default_furikomi = st.secrets.get('FURIKOMI_INFO', '')
-
-    sheets_url = st.text_input(
-        '会計シート URL',
-        value=default_url,
-        help='「会計」シートを開いた状態の URL を貼り付けてください（URLの末尾に #gid=XXXXX が付きます）',
-    )
-    sheet_gid = st.text_input(
-        '会計シート GID（省略可）',
-        value=default_gid,
-        help='URLに #gid=XXXXX が含まれない場合はここに数字を入力。省略時は最初のシートを使用。',
-    )
-    st.divider()
-
-    furikomi_info = st.text_area(
-        '振込先情報',
-        value=default_furikomi,
-        help='個人払い患者の請求書に記載する振込先（銀行名・支店・口座番号など）',
-        height=80,
-    )
+    sheets_url    = st.secrets.get('SHEETS_URL', '')
+    sheet_gid     = st.secrets.get('SHEET_GID', '')
+    furikomi_info = st.secrets.get('FURIKOMI_INFO', '')
 
 
 # ==================== メインエリア ====================
@@ -583,15 +561,8 @@ st.divider()
 
 # ==================== 実行ボタン ====================
 if st.button('🚀 CSV を生成する', type='primary', use_container_width=True):
-    errors = []
     if not med_file:
-        errors.append('調剤報酬PDFをアップロードしてください。')
-    if not sheets_url:
-        errors.append('会計シートの URL を入力してください。')
-
-    if errors:
-        for e in errors:
-            st.error(e)
+        st.error('調剤報酬PDFをアップロードしてください。')
     else:
         with st.spinner('処理中...'):
 
